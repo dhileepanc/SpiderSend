@@ -1,12 +1,22 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { CustomText } from '../components/common';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { CustomText, AppToolbar } from '../components/common';
+import { globalStyles } from '../styles/globalStyles';
+import ContactGroupIcon from '../assets/icons/contactgroup.svg';
 
 const ContactGroupScreen = () => {
   return (
     <View style={styles.container}>
-      <CustomText variant="h2" style={styles.title}>Contact Group</CustomText>
-      <CustomText variant="body" style={styles.sub}>Organise and manage your contact groups.</CustomText>
+      <AppToolbar title="Contact Group" />
+      <ScrollView style={globalStyles.container} contentContainerStyle={styles.scrollContent}>
+
+<view style={styles.topContactGroupSection}>
+<View style={styles.topContent}>
+<ContactGroupIcon/>
+</View>
+</view>
+
+      </ScrollView>
     </View>
   );
 };
@@ -14,7 +24,20 @@ const ContactGroupScreen = () => {
 export default ContactGroupScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  title: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
-  sub: { fontSize: 14, color: '#64748B', textAlign: 'center' },
+  container: { flex: 1, backgroundColor: '#F8FAFC', },
+ 
+   scrollContent: {
+    padding: 24,
+    flexGrow: 1,
+  },
+  topContactGroupSection:{
+ padding: 24,
+ backgroundColor:'#FFF3D5',
+ borderColor:'#FFB600',
+ borderWidth:1
+  },
+  topContent:{
+  flexGrow: 1,
+  },
 });
+

@@ -6,6 +6,7 @@ import { globalStyles } from '../styles/globalStyles';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { colors, fonts } from '../theme';
 import OverviewCard from '../components/common/OverviewCard';
+import QuickActionCard from '../components/common/QuickActionCard';
 import { getDashboardData } from '../services';
 
 import SendIcon from '../assets/icons/SendIcon.svg';
@@ -13,12 +14,21 @@ import AvailableIcon from '../assets/icons/availableIcon.svg';
 import PurchaseIcon from '../assets/icons/purchaseIcon.svg';
 import ScanIcon from '../assets/icons/scanIcon.svg';
 
+import HomeIcon from '../assets/icons/home.svg';
+import DirectSendIcon from '../assets/icons/directsend.svg';
+import MailIcon from '../assets/icons/mail.svg';
+import ContactGroupIcon from '../assets/icons/contactgroup.svg';
+import AiIcon from '../assets/icons/aiicon.svg';
+import DirectSendAngleCion from '../assets/icons/directsendangle.svg';
+
+
 export const HomeScreen = () => {
   const { colors, spacing } = useTheme();
   const { user, logout } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [overviewData, setOverviewData] = useState<any[]>([]);
+
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -122,6 +132,54 @@ export const HomeScreen = () => {
           </View>
         )}
       </View>
+
+      <View style={{ marginBottom: 16 }}>
+        <CustomText variant="h2" style={[styles.homeContentTitle, { marginTop: 10, marginBottom: 12 }]}>
+          Quick Actions
+        </CustomText>
+        <View style={styles.quickActionsGrid}>
+          <View style={styles.quickActionItem}>
+            <QuickActionCard
+              title="Click2Connect AI"
+              subTitle="Instant smart outreach"
+              Icon={AiIcon}
+              borderColor="#06B6D4"
+              backgroundColor="#E0F7FA"
+              onPress={() => {}}
+            />
+          </View>
+          <View style={styles.quickActionItem}>
+            <QuickActionCard
+              title="Direct Send"
+              subTitle="Send messages fast"
+              Icon={DirectSendAngleCion}
+              borderColor="#F87171"
+              backgroundColor="#FEE2E2"
+              onPress={() => {}}
+            />
+          </View>
+          <View style={styles.quickActionItem}>
+            <QuickActionCard
+              title="Mail Template"
+              subTitle="Create reusable emails"
+              Icon={MailIcon}
+              borderColor="#818CF8"
+              backgroundColor="#EDE9FE"
+              onPress={() => {}}
+            />
+          </View>
+          <View style={styles.quickActionItem}>
+            <QuickActionCard
+              title="Contact Group"
+              subTitle="Manage & organize contacts"
+              Icon={ContactGroupIcon}
+              borderColor="#FBBF24"
+              backgroundColor="#FEF9C3"
+              onPress={() => {}}
+            />
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 };
@@ -201,16 +259,24 @@ const styles = StyleSheet.create({
     marginHorizontal: -24, // same as scrollContent padding
   },
   overviewGrid: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  marginTop: 16,
-  marginHorizontal: -6,
-},
-
-gridItem: {
-  width: '50%',
-  padding: 6,
-},
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 5,
+    marginHorizontal: -6,
+  },
+  gridItem: {
+    width: '50%',
+    padding: 6,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -6,
+  },
+  quickActionItem: {
+    width: '50%',
+    padding: 6,
+  },
 });
 
 export default HomeScreen;

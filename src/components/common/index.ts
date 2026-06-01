@@ -9,3 +9,5 @@ export type { CustomInputProps } from './CustomInput';
 
 export { default as Loader } from './Loader';
 export type { LoaderProps } from './Loader';
+
+export { default as AppToolbar } from './AppToolbar';
