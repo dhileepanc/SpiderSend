@@ -261,7 +261,6 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 22,
-    fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'center',
     fontFamily: fonts.families.extrabold,
@@ -303,7 +302,6 @@ bottomCard: {
   loginTitle: {
     textAlign: 'center',
     fontSize: 24,
-    fontWeight: '900',
     color: '#0F172A',
     fontFamily: fonts.families.extrabold,
   },

@@ -20,6 +20,9 @@ import MailIcon from '../assets/icons/mail.svg';
 import ContactGroupIcon from '../assets/icons/contactgroup.svg';
 import AiIcon from '../assets/icons/aiicon.svg';
 import DirectSendAngleCion from '../assets/icons/directsendangle.svg';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { BottomTabParamList } from '../navigation/BottomTabNavigator';
 
 
 export const HomeScreen = () => {
@@ -28,8 +31,9 @@ export const HomeScreen = () => {
   
   const [loading, setLoading] = useState(true);
   const [overviewData, setOverviewData] = useState<any[]>([]);
+const navigation = useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
 
-
+const handleToClickToVerify = ()=>{}
   useEffect(() => {
     const fetchDashboard = async () => {
       if (!user?.id) return;
@@ -94,15 +98,15 @@ export const HomeScreen = () => {
           />
 
           <View style={styles.textContainer}>
-            <CustomText variant="h2" style={styles.welcomeTitle}>
+            <CustomText  style={styles.welcomeTitle}>
               Welcome,{' '}
-              <CustomText variant="h2" style={styles.userName}>
+              <CustomText  style={styles.userName}>
                 {user?.name || 'User'} 👋
               </CustomText>
             </CustomText>
 
             <CustomText
-              variant="body"
+              
               color={colors.text.secondary}
               style={styles.subTitle}>
               You’re all set to connect today
@@ -114,7 +118,7 @@ export const HomeScreen = () => {
         <View style={styles.fullWidthDivider} />
       </View>
       <View>
-        <CustomText variant="h2" style={styles.homeContentTitle}>
+        <CustomText  style={styles.homeContentTitle}>
           Overview
         </CustomText>
         
@@ -134,7 +138,7 @@ export const HomeScreen = () => {
       </View>
 
       <View style={{ marginBottom: 16 }}>
-        <CustomText variant="h2" style={[styles.homeContentTitle, { marginTop: 10, marginBottom: 12 }]}>
+        <CustomText  style={[styles.homeContentTitle, { marginTop: 10, marginBottom: 12 }]}>
           Quick Actions
         </CustomText>
         <View style={styles.quickActionsGrid}>
@@ -145,7 +149,7 @@ export const HomeScreen = () => {
               Icon={AiIcon}
               borderColor="#06B6D4"
               backgroundColor="#E0F7FA"
-              onPress={() => {}}
+              onPress={() => navigation.navigate("Click2Connect")}
             />
           </View>
           <View style={styles.quickActionItem}>
@@ -199,23 +203,20 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     fontSize: 20,
-    fontWeight: fonts.weights.extrabold,
     fontFamily: fonts.families.extrabold,
-
   },
-  homeContentTitle:{
-  fontSize: 14,
-    fontWeight: fonts.weights.bold,
+  homeContentTitle: {
+    fontSize: 14,
     fontFamily: fonts.families.bold,
   },
   userName: {
     fontSize: 20,
-    fontWeight: fonts.weights.extrabold,
-    color: colors.primary.main, // your highlight color
+    color: colors.primary.main,
     fontFamily: fonts.families.extrabold,
   },
   cardHeader: {
-    fontWeight: '700',
+    fontWeight: fonts.weights.bold,
+    fontFamily: fonts.families.bold,
   },
   controlContainer: {
     marginTop: 40,

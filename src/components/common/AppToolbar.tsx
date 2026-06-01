@@ -68,7 +68,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontFamily: fonts.families.bold,
-    fontWeight: fonts.weights.bold,
     color: colors.text.primary,
     marginLeft: 12,
   },

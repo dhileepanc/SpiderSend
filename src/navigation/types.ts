@@ -14,6 +14,40 @@ export type AuthStackParamList = {
 export type AppStackParamList = {
   Home: undefined;
   Details: { itemId: string; title: string } | undefined;
+  Camera: undefined;
+  Click2Connect: {
+    photoUri?: string;
+    client_id?: number;
+  } | undefined;
+  PreviewExtracted: {
+    data: {
+      fields: Array<{
+        name?: string;
+        email?: string;
+        company_name?: string;
+        mobile_number?: string;
+        address?: string;
+      }>;
+      image?: string;
+      image?: string;
+    };
+  };
+  PreviewSend: {
+    contacts: Array<{
+      id: string;
+      name: string;
+      email: string;
+      companyName: string;
+      mobileNumber: string;
+      address: string;
+    }>;
+    template: {
+      id: number;
+      name: string;
+      subject: string;
+      content: string;
+    };
+  };
 };
 
 /**

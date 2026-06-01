@@ -9,3 +9,7 @@ export type { LoginRequest, LoginResponse, OtpVerifyRequest, OtpVerifyResponse }
 // Dashboard API service
 export { getDashboardData } from './dashboardService';
 export type { DashboardData, DashboardResponse } from './dashboardService';
+
+// Click2Connect API service
+export { scanBusinessCard } from './click2ConnectService';
+export type { ScanCardResponse } from './click2ConnectService';

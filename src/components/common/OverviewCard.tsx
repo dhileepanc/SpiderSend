@@ -3,6 +3,7 @@
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
 import {CustomText} from '../common/CustomText';
+import {fonts} from '../../theme';
 
 interface Props {
   title: string;
@@ -64,18 +65,18 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fonts.families.bold,
   },
 
   value: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fonts.families.bold,
     marginTop: 2,
     color: '#000',
   },
 
   subtitle: {
- fontWeight: '500',
+    fontFamily: fonts.families.medium,
     fontSize: 8,
     color: '#333333',
   },

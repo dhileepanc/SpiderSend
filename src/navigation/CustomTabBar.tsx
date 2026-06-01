@@ -10,6 +10,7 @@ import {
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { fonts } from '../theme';
 
 import HomeIcon from '../assets/icons/home.svg';
 import HomeActiveIcon from '../assets/icons/home_active.svg';
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: fonts.families.semibold,
     marginTop: 3,
     textAlign: 'center',
     lineHeight: 13,

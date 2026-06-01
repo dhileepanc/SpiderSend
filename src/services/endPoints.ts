@@ -33,6 +33,21 @@ export const ENDPOINTS = {
     LIST: '/notifications',
     MARK_READ: (id: string | number) => `/notifications/${id}/read`,
   },
+  CLICK2CONNECT: {
+    /** POST /click-to-connect-scan  →  { client_id, file }  →  scans a business card */
+    SCAN: '/click-to-connect-scan',
+    /** POST /click-to-connect-re-scan  →  { client_id, image } */
+    RE_SCAN: '/click-to-connect-re-scan',
+    /** POST /click-to-connect-scan-store */
+    STORE: '/click-to-connect-scan-store',
+  },
+  CLICK2CONNECTVERIFY: {
+    VERIFY: '/click-to-connect-verify',
+  },
+  MAIL_TEMPLATE: {
+    LIST: '/mail-template-list',
+    GENERATE: '/mail-template-generate',
+  }
 } as const;
 
 export type EndpointsType = typeof ENDPOINTS;

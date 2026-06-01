@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: 'center',
-    fontWeight: '600',
+    fontFamily: 'Montserrat-SemiBold',
   },
   iconLeft: {
     marginRight: spacing.sm,
