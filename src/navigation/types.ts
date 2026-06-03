@@ -29,7 +29,6 @@ export type AppStackParamList = {
         address?: string;
       }>;
       image?: string;
-      image?: string;
     };
   };
   PreviewSend: {
@@ -47,6 +46,7 @@ export type AppStackParamList = {
       subject: string;
       content: string;
     };
+    clickToConnectId?: number | string;
   };
 };
 

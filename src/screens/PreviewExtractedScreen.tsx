@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   Platform,
   Alert,
   Modal,
-  FlatList,
+  Animated,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,23 +16,25 @@ import { AppToolbar, CustomText, CustomButton, CustomInput } from '../components
 import { colors, fonts } from '../theme';
 import { AppStackParamList, AppNavigationProp } from '../navigation/types';
 import { useAuth } from '../hooks';
-import { 
-  reScanBusinessCard, 
-  getMailTemplates, 
-  generateMailTemplate, 
+import {
+  reScanBusinessCard,
+  getMailTemplates,
+  generateMailTemplate,
   storeScanData,
   MailTemplate,
   ContactData
 } from '../services/click2ConnectService';
 
-import AiIcon from '../assets/icons/aiicon.svg';
+import AiIcon from '../assets/icons/thundericon.svg';
+import ScanningIcon from '../assets/icons/scanningIcon.svg';
+import DownArrowIcon from '../assets/icons/downarrow.svg';
 
 const PreviewExtractedScreen = () => {
   const { user } = useAuth();
   const navigation = useNavigation<AppNavigationProp>();
   const route = useRoute<RouteProp<AppStackParamList, 'PreviewExtracted'>>();
   const insets = useSafeAreaInsets();
-  
+
   const scanData = route.params?.data;
   const initialFields = scanData?.fields && scanData.fields.length > 0 ? scanData.fields : [{}];
 
@@ -80,6 +82,31 @@ const PreviewExtractedScreen = () => {
   useEffect(() => {
     loadTemplates();
   }, [user?.id]);
+
+  const lineAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (rescanning) {
+      lineAnim.setValue(0);
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(lineAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(lineAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    } else {
+      lineAnim.stopAnimation();
+    }
+  }, [rescanning]);
 
   // Handle re-scan action
   const handleReScan = async () => {
@@ -160,7 +187,7 @@ const PreviewExtractedScreen = () => {
       Alert.alert('Validation Error', 'Please select a mail template from the dropdown.');
       return;
     }
-    
+
     // Validate contacts
     const invalidIndex = contacts.findIndex(c => !c.name.trim() || !c.email.trim());
     if (invalidIndex !== -1) {
@@ -172,15 +199,31 @@ const PreviewExtractedScreen = () => {
     try {
       const res = await storeScanData(user.id, selectedTemplate.id, contacts);
       if (res.status) {
+        const clickToConnectId = res.click_to_connect_id
         navigation.navigate('PreviewSend', {
           contacts,
-          template: selectedTemplate
+          template: selectedTemplate,
+          clickToConnectId,
         });
       } else {
         Alert.alert('Error', res.message || 'Failed to save scan data.');
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to store scan data');
+      console.log('API Error:', e?.response?.data);
+
+      const apiError = e?.response?.data;
+
+      if (apiError?.errors) {
+        const firstErrorKey = Object.keys(apiError.errors)[0];
+        const firstErrorMessage = apiError.errors[firstErrorKey][0];
+
+        Alert.alert('Validation Error', firstErrorMessage);
+      } else {
+        Alert.alert(
+          'Error',
+          apiError?.message || 'Failed to store scan data'
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -201,8 +244,8 @@ const PreviewExtractedScreen = () => {
           {/* Mail Template Section */}
           <View style={styles.headerRow}>
             <CustomText style={styles.headerLabel}>Select Mail Template</CustomText>
-            <TouchableOpacity 
-              style={styles.aiButton} 
+            <TouchableOpacity
+              style={styles.aiButton}
               activeOpacity={0.8}
               onPress={() => setShowAiModal(true)}
             >
@@ -212,15 +255,17 @@ const PreviewExtractedScreen = () => {
           </View>
 
           <View style={{ marginBottom: 24 }}>
-            <TouchableOpacity 
-              style={styles.dropdownContainer} 
+            <TouchableOpacity
+              style={styles.dropdownContainer}
               activeOpacity={0.8}
               onPress={() => setShowTemplateModal(!showTemplateModal)}
             >
               <CustomText style={selectedTemplate ? styles.dropdownSelected : styles.dropdownPlaceholder}>
                 {selectedTemplate ? selectedTemplate.name : 'Choose from below'}
               </CustomText>
-              <CustomText style={styles.dropdownIcon}>˅</CustomText>
+              <View style={{ transform: [{ rotate: showTemplateModal ? '180deg' : '0deg' }] }}>
+                <DownArrowIcon width={14} height={14} />
+              </View>
             </TouchableOpacity>
 
             {showTemplateModal && (
@@ -259,9 +304,17 @@ const PreviewExtractedScreen = () => {
                     </TouchableOpacity>
                   </View>
                 )}
+                {isFirst && contacts.length > 1 && (
+                  <View style={[styles.contactCardHeader, { marginBottom: 12 }]}>
+                    <CustomText style={styles.contactCardTitle}>Scan Data #1</CustomText>
+                    <TouchableOpacity style={styles.trashBtn} onPress={() => handleDeleteRow(contact.id)}>
+                      <CustomText style={styles.trashIconText}>🗑</CustomText>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 <View style={styles.labelRow}>
-                  <CustomText style={styles.fieldLabel}>Name <CustomText style={{color: 'red'}}>*</CustomText></CustomText>
+                  <CustomText style={styles.fieldLabel}>Name <CustomText style={{ color: 'red' }}>*</CustomText></CustomText>
                 </View>
                 <CustomInput
                   value={contact.name}
@@ -272,13 +325,14 @@ const PreviewExtractedScreen = () => {
                 />
 
                 <View style={styles.labelRow}>
-                  <CustomText style={styles.fieldLabel}>Email <CustomText style={{color: 'red'}}>*</CustomText></CustomText>
+                  <CustomText style={styles.fieldLabel}>Email <CustomText style={{ color: 'red' }}>*</CustomText></CustomText>
                 </View>
                 <CustomInput
                   value={contact.email}
                   onChangeText={(val) => handleUpdateContact(contact.id, 'email', val)}
                   keyboardType="email-address"
                   inputRowStyle={styles.customInputRow}
+                  autoCapitalize="none"
                   inputStyle={styles.customInputText}
                   containerStyle={styles.inputContainer}
                 />
@@ -347,6 +401,7 @@ const PreviewExtractedScreen = () => {
           disabled={isSubmitting || rescanning}
           style={styles.previewSendBtn}
           textStyle={styles.previewSendText}
+
         />
       </View>
 
@@ -389,6 +444,45 @@ const PreviewExtractedScreen = () => {
         </View>
       </Modal>
 
+      <Modal visible={rescanning} transparent animationType="fade">
+        <View style={styles.modalOverlay1}>
+          <View style={styles.scanningModalCard}>
+            <View style={styles.scanningContent}>
+              <View style={styles.scannerIconWrapper}>
+                <ScanningIcon width={100} height={100} />
+              </View>
+
+              <CustomText style={styles.scanningTitle}>
+                Rescanning Your Card
+              </CustomText>
+
+              <CustomText style={styles.scanningSubTitle}>
+                Please wait while we extract the information from{'\n'}
+                your business card
+              </CustomText>
+
+              <View style={styles.lineLoaderContainer}>
+                <Animated.View
+                  style={[
+                    styles.lineLoaderBar,
+                    {
+                      left: lineAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '70%'],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+
+              <CustomText style={styles.extractingText}>
+                Extracting Card Details....
+              </CustomText>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 };
@@ -411,23 +505,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   headerLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: fonts.families.bold,
-    color: '#111827',
+    color: '#000',
   },
   aiButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#232232',
     paddingHorizontal: 12,
     paddingVertical: 8,
+    backgroundColor: "#171829",
     borderRadius: 20,
     gap: 6,
   },
   aiButtonText: {
     color: '#FFF',
     fontSize: 12,
-    fontFamily: fonts.families.medium,
+    fontFamily: fonts.families.bold,
   },
   dropdownContainer: {
     flexDirection: 'row',
@@ -453,11 +547,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   dropdownList: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginTop: 8,
+    backgroundColor: '#F3F4F6',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    marginTop: 2,
     overflow: 'hidden',
   },
   dropdownItem: {
@@ -548,13 +641,16 @@ const styles = StyleSheet.create({
     borderColor: '#111827',
     height: 50,
     marginBottom: 20,
-    borderStyle: 'dashed',
-    borderWidth: 2,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+
   addRowText: {
     color: '#111827',
     fontFamily: fonts.families.bold,
     fontSize: 15,
+    textAlign: 'center',
   },
   bottomBar: {
     position: 'absolute',
@@ -575,6 +671,7 @@ const styles = StyleSheet.create({
     height: 54,
     borderRadius: 30,
     borderColor: '#111827',
+    borderWidth: 1,
   },
   rescanBtnText: {
     color: '#111827',
@@ -585,12 +682,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 54,
     borderRadius: 30,
-    backgroundColor: '#232232',
+    backgroundColor: '#171829',
   },
   previewSendText: {
     color: '#FFFFFF',
     fontFamily: fonts.families.bold,
-    fontSize: 15,
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
@@ -667,5 +764,63 @@ const styles = StyleSheet.create({
   aiGenerateBtnText: {
     color: '#fff',
     fontFamily: fonts.families.bold,
+  },
+
+  modalOverlay1: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  scanningModalCard: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+  },
+
+  scanningContent: {
+    alignItems: 'center',
+  },
+
+  scannerIconWrapper: {
+    marginBottom: 20,
+  },
+
+  scanningTitle: {
+    fontSize: 22,
+    fontFamily: fonts.families.semibold,
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+
+  scanningSubTitle: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginBottom: 24,
+  },
+
+  lineLoaderContainer: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+
+  lineLoaderBar: {
+    position: 'absolute',
+    width: '30%',
+    height: '100%',
+    backgroundColor: colors.primary.main,
+    borderRadius: 10,
+  },
+
+  extractingText: {
+    fontSize: 14,
+    color: colors.text.secondary,
   },
 });

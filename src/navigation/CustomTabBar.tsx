@@ -25,17 +25,15 @@ import Click2ConnectIcon from '../assets/icons/click2connect.svg';
 const { width } = Dimensions.get('window');
 
 // ── Design tokens ────────────────────────────────────────────────────────────
-const TAB_BAR_HEIGHT = 86;       // visible content height (increased)
-const NOTCH_WIDTH = 116;         // total width of the curved notch
+const TAB_BAR_HEIGHT = 90;       // visible content height (increased)
+const NOTCH_WIDTH = 70;         // total width of the curved notch
 const NOTCH_DEPTH = 40;          // how deep the curve dips
-const CENTER_BTN_SIZE = 70;      // diameter of the floating circle
-const FLOAT_ABOVE = 14;          // px the button centre sits ABOVE bar top
-const ACTIVE_COLOR = '#23A9BB';
-const INACTIVE_COLOR = '#64748B';
+const CENTER_BTN_SIZE = 62;      // diameter of the floating circle
+const FLOAT_ABOVE = 1;          // px the button centre sits ABOVE bar top
+const ACTIVE_COLOR = '#2DADBE';
+const INACTIVE_COLOR = '#000';
 const BAR_BG = '#ffffff';        // slightly off-white to contrast with pure white screens
 const CENTER_BTN_BG = '#22242A'; // Dark slate/grey for the ScanIcon button
-
-// ── Inline SVG icons ─────────────────────────────────────────────────────────
 
 // ── Route helpers ─────────────────────────────────────────────────────────────
 const getIcon = (routeName: string, focused: boolean, color: string) => {
@@ -128,7 +126,9 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
         accessibilityRole="button"
         accessibilityLabel={options.tabBarAccessibilityLabel}
       >
-        {getIcon(route.name, isFocused, color)}
+        <View style={styles.iconWrapper}>
+          {getIcon(route.name, isFocused, color)}
+        </View>
         <Text style={[styles.label, { color }]}>{getLabel(route.name)}</Text>
       </TouchableOpacity>
     );
@@ -141,24 +141,20 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
     }
   };
 
-  // Centre button sits above the notch — its bottom edge aligns with the top
-  // of the white bar, regardless of the system inset.
-
-
   return (
     <View style={[styles.wrapper, { height: totalHeight }]}>
 
-      {/* Curved SVG background — fills full wrapper including inset zone */}
+      {/* Curved SVG background with cutout */}
       <Svg
         width={width}
         height={totalHeight}
         style={StyleSheet.absoluteFill}
       >
-        <Path 
-          d={buildCurvedPath(totalHeight)} 
-          fill={BAR_BG} 
-          stroke="#CBD5E1" 
-          strokeWidth={1.5} 
+        <Path
+          d={buildCurvedPath(totalHeight)}
+          fill={BAR_BG}
+          stroke="#CBD5E1"
+          strokeWidth={1.5}
         />
       </Svg>
 
@@ -170,7 +166,9 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
 
         {/* Spacer behind the centre notch */}
         <View style={styles.centerSpace}>
-          <View style={{ width: 24, height: 24 }} />
+          <View style={styles.centerIconWrapper}>
+            <View style={{ width: 24, height: 24 }} />
+          </View>
           <Text style={[styles.label, { color: state.index === centerIndex ? ACTIVE_COLOR : INACTIVE_COLOR }]}>
             {getLabel(centerRoute.name)}
           </Text>
@@ -221,33 +219,38 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   side: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     height: TAB_BAR_HEIGHT,
   },
-  // Extra wide spacer so tab items don't overlap the notch area
   centerSpace: {
     width: NOTCH_WIDTH + 24,
     height: TAB_BAR_HEIGHT,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingTop: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 8,
+    justifyContent: 'flex-start',
+    paddingTop: 12,
+  },
+  iconWrapper: {
+    marginTop: 8, // Added margin top to icon
+  },
+  centerIconWrapper: {
+    marginTop: 8, // Added margin top to center icon
   },
   label: {
     fontSize: 10,
-    fontFamily: fonts.families.semibold,
-    marginTop: 3,
+    fontFamily: fonts.families.bold,
+    marginTop: 6, // Increased from 4 to add more spacing
     textAlign: 'center',
     lineHeight: 13,
   },

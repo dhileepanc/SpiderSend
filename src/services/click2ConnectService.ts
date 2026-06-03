@@ -131,6 +131,7 @@ export interface ContactData {
 export interface StoreScanResponse {
   status: boolean;
   message: string;
+  click_to_connect_id:number;
   data?: any;
 }
 
@@ -159,5 +160,70 @@ export const storeScanData = async (
       headers: { 'Content-Type': 'multipart/form-data' },
     }
   );
+  return response.data;
+};
+
+export interface SendMailPayload {
+  clientId: string | number;
+  clickToConnectId: string | number;
+  name: string;
+  subject: string;
+  content: string;
+  mailCount: number;
+  isScheduled?: 0 | 1;
+  scheduledAt?: string;   // e.g. "2026-06-05 09:00:00"
+  scheduledTimezone?: string; // e.g. "Asia/Kolkata"
+}
+
+export interface SendMailResponse {
+  status: boolean;
+  message: string;
+  data?: any;
+}
+
+export const sendMailCampaign = async (payload: SendMailPayload): Promise<SendMailResponse> => {
+  const formData = new FormData();
+  formData.append('client_id', String(payload.clientId));
+  formData.append('click_to_connect_id', String(payload.clickToConnectId));
+  formData.append('name', payload.name);
+  formData.append('subject', payload.subject);
+  formData.append('content', payload.content);
+  formData.append('mail_count', String(payload.mailCount));
+  if (payload.isScheduled !== undefined) {
+    formData.append('is_scheduled', String(payload.isScheduled));
+  }
+  if (payload.scheduledAt) {
+    formData.append('scheduled_at', payload.scheduledAt);
+  }
+  if (payload.scheduledTimezone) {
+    formData.append('scheduled_timezone', payload.scheduledTimezone);
+  }
+
+  const response = await axiosInstance.post<SendMailResponse>(
+    ENDPOINTS.CLICK2CONNECT.SEND_MAIL,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return response.data;
+};
+
+export interface PreviewResponse {
+  status: boolean;
+  message: string;
+  data?: {
+    name?: string;
+    subject?: string;
+    content?: string;
+    [key: string]: any;
+  };
+}
+
+export const getClickToConnectPreview = async (
+  clientId: string | number,
+  clickToConnectId: string | number
+): Promise<PreviewResponse> => {
+  const response = await axiosInstance.get<PreviewResponse>(ENDPOINTS.CLICK2CONNECT.PREVIEW, {
+    params: { client_id: clientId, click_to_connect_id: clickToConnectId },
+  });
   return response.data;
 };

@@ -140,6 +140,8 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
           {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
           <CustomText
             variant="button"
+            numberOfLines={1}
+            adjustsFontSizeToFit
             style={[
               styles.text,
               { color: resolvedTextColor },
