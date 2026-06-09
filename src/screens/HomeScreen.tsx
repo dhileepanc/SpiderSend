@@ -34,6 +34,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { BottomTabParamList } from '../navigation/BottomTabNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -45,9 +46,10 @@ export const HomeScreen = () => {
   const [overviewData, setOverviewData] = useState<any[]>([]);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
 
-  const navigation = useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
+  const navigation =
+    useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
+  const insets = useSafeAreaInsets();
   const showModal = () => {
     setProfileModalVisible(true);
     Animated.spring(slideAnim, {
@@ -131,11 +133,22 @@ export const HomeScreen = () => {
 
   return (
     <>
-      <ScrollView style={globalStyles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={globalStyles.container}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top,
+          },
+        ]}
+      >
         {/* Welcome banner */}
-        <View style={styles.header}>
+        <View>
           <View style={styles.profileRow}>
-            <TouchableOpacity onPress={showModal} style={styles.profileImageWrapper}>
+            <TouchableOpacity
+              onPress={showModal}
+              style={styles.profileImageWrapper}
+            >
               <Image
                 source={require('../assets/images/profile.png')}
                 style={styles.profileImageCircle}
@@ -152,7 +165,8 @@ export const HomeScreen = () => {
 
               <CustomText
                 color={themeColors.text.secondary}
-                style={styles.subTitle}>
+                style={styles.subTitle}
+              >
                 You're all set to connect today
               </CustomText>
             </View>
@@ -181,7 +195,12 @@ export const HomeScreen = () => {
 
         {/* Quick Actions */}
         <View style={{ marginBottom: 16 }}>
-          <CustomText style={[styles.homeContentTitle, { marginTop: 10, marginBottom: 12 }]}>
+          <CustomText
+            style={[
+              styles.homeContentTitle,
+              { marginTop: 10, marginBottom: 12 },
+            ]}
+          >
             Quick Actions
           </CustomText>
           <View style={styles.quickActionsGrid}>
@@ -246,41 +265,48 @@ export const HomeScreen = () => {
 
         {/* Slide-up sheet */}
         <Animated.View
-  style={[styles.bottomSheet, { transform: [{ translateY: slideAnim }] }]}
->
-  {/* Centered avatar sitting on top edge */}
-  <View style={styles.avatarCenterWrapper}>
-    <Image
-      source={require('../assets/icons/bottomProfile.png')}
-      style={styles.modalAvatar}
-    />
-  </View>
+          style={[
+            styles.bottomSheet,
+            { transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          {/* Centered avatar sitting on top edge */}
+          <View style={styles.avatarCenterWrapper}>
+            <Image
+              source={require('../assets/icons/bottomProfile.png')}
+              style={styles.modalAvatar}
+            />
+          </View>
 
-  {/* Close icon top right */}
-  <TouchableOpacity style={styles.closeIconWrapper} onPress={hideModal}>
-    <CloseIcon width={34} height={34} />
-  </TouchableOpacity>
+          {/* Close icon top right */}
+          <TouchableOpacity style={styles.closeIconWrapper} onPress={hideModal}>
+            <CloseIcon width={34} height={34} />
+          </TouchableOpacity>
 
-  {/* Name & Email */}
-  <View style={styles.nameRow}>
-    <CustomText style={styles.nameText}>Name:</CustomText>
-    <CustomText style={styles.nameValueText}>{user?.name}</CustomText>
-  </View>
-  <View style={styles.emailRow}>
-    <CustomText style={styles.nameText}>Email:</CustomText>
-    <CustomText style={styles.emailValueText}>{user?.email}</CustomText>
-  </View>
+          {/* Name & Email */}
+          <View style={styles.nameRow}>
+            <CustomText style={styles.nameText}>Name:</CustomText>
+            <CustomText style={styles.nameValueText}>{user?.name}</CustomText>
+          </View>
+          <View style={styles.emailRow}>
+            <CustomText style={styles.nameText}>Email:</CustomText>
+            <CustomText style={styles.emailValueText}>{user?.email}</CustomText>
+          </View>
 
-  <View style={styles.divider} />
+          <View style={styles.divider} />
 
-  {/* Logout Button */}
-  <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-    <Logout width={18} height={19} />
-    <CustomText style={styles.logoutText}>Logout</CustomText>
-  </TouchableOpacity>
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Logout width={18} height={19} />
+            <CustomText style={styles.logoutText}>Logout</CustomText>
+          </TouchableOpacity>
 
-  <View style={{ height: 30 }} />
-</Animated.View>
+          <View style={{ height: 30 }} />
+        </Animated.View>
       </Modal>
     </>
   );
@@ -291,10 +317,10 @@ const styles = StyleSheet.create({
     padding: 24,
     flexGrow: 1,
   },
-  header: {
-    marginTop: 20,
-    marginBottom: 10,
-  },
+  // header: {
+  //   marginTop: 20,
+  //   marginBottom: 10,
+  // },
   welcomeTitle: {
     fontSize: 20,
     fontFamily: fonts.families.extrabold,
@@ -315,7 +341,7 @@ const styles = StyleSheet.create({
   bottomProfileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:"space-between"
+    justifyContent: 'space-between',
   },
   textContainer: {
     flex: 1,
@@ -368,23 +394,23 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.50)',
   },
-bottomSheet: {
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  backgroundColor: '#FFFFFF',
-  borderTopLeftRadius: 30,
-  borderTopRightRadius: 30,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: -6 },
-  shadowOpacity: 0.15,
-  shadowRadius: 20,
-  elevation: 24,
-  paddingHorizontal: 16,
-  paddingTop: 70, // space for the avatar that overlaps the top
-  paddingBottom: 16,
-},
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 24,
+    paddingHorizontal: 16,
+    paddingTop: 70, // space for the avatar that overlaps the top
+    paddingBottom: 16,
+  },
   handleBar: {
     width: 44,
     height: 5,
@@ -404,15 +430,14 @@ bottomSheet: {
     marginTop: 12,
   },
   avatarCenterWrapper: {
-  position: 'absolute',
-  top: -50, // half of avatar height, pulls it above the sheet
-  width: 110,
-  height: 110,
-  borderRadius: 55,
-  overflow: 'hidden',
- left: 16,
- 
-},
+    position: 'absolute',
+    top: -50, // half of avatar height, pulls it above the sheet
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    overflow: 'hidden',
+    left: 16,
+  },
   avatarWrapper: {
     width: 82,
     height: 82,
@@ -428,16 +453,16 @@ bottomSheet: {
     resizeMode: 'cover',
   },
   modalAvatar: {
-  width: 110,
-  height: 110,
-  borderRadius: 55,
-  resizeMode: 'cover',
-},
-closeIconWrapper: {
-  position: 'absolute',
-  top: 16,
-  right: 16,
-},
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    resizeMode: 'cover',
+  },
+  closeIconWrapper: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+  },
   sheetName: {
     fontSize: 18,
     fontFamily: fonts.families.bold,
@@ -478,15 +503,14 @@ closeIconWrapper: {
     maxWidth: '55%',
   },
   logoutButton: {
-    
     marginTop: 20,
     backgroundColor: '#1C1C28',
     borderRadius: 30,
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    flexDirection:'row',
-    gap:5
+    flexDirection: 'row',
+    gap: 5,
   },
   logoutText: {
     fontSize: 16,
@@ -494,34 +518,31 @@ closeIconWrapper: {
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
-  nameText:{
-    color: "#9A9A9A",
-    fontFamily:fonts.families.regular,
-    fontSize:12
-
-  },  
-  nameValueText:{
+  nameText: {
+    color: '#9A9A9A',
+    fontFamily: fonts.families.regular,
+    fontSize: 12,
+  },
+  nameValueText: {
     color: colors.primary.main,
-    fontFamily:fonts.families.bold,
-    fontSize:20,
-    marginStart:22
-
-  },  
-  emailValueText:{
+    fontFamily: fonts.families.bold,
+    fontSize: 20,
+    marginStart: 22,
+  },
+  emailValueText: {
     color: colors.text.primary,
-    fontFamily:fonts.families.regular,
-    fontSize:12,
-    marginStart:22
-
-  },  
-  nameRow:{
-    flexDirection:"row"
+    fontFamily: fonts.families.regular,
+    fontSize: 12,
+    marginStart: 22,
   },
-  emailRow:{
-    flexDirection:"row",
-    marginTop:8
+  nameRow: {
+    flexDirection: 'row',
   },
-   divider: {
+  emailRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  divider: {
     height: 0.7,
     backgroundColor: '#DADADA',
     marginVertical: 12,
