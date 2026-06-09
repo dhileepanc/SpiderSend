@@ -11,3 +11,5 @@ export { default as Loader } from './Loader';
 export type { LoaderProps } from './Loader';
 
 export { default as AppToolbar } from './AppToolbar';
+export { default as StatusModal } from './StatusModal';
+export { default as ConfirmModal } from './ConfirmModal';

@@ -74,9 +74,9 @@ export const colors = {
 
   // High-level Semantic Keys (for quick consistency)
   text: {
-    primary: '#0F172A',      // slate-900
+    primary: '#000',      // slate-900
     secondary: '#9A9A9A',    // slate-600
-    muted: '#94A3B8',        // slate-400
+    muted: '#9A9A9A',        // slate-400
     disabled: '#CBD5E1',     // slate-300
     inverse: '#FFFFFF',
   },
@@ -89,6 +89,7 @@ export const colors = {
     default: '#F8FAFC',      // slate-50
     paper: '#FFFFFF',
     tint: '#F1F5F9',
+    inputBg:"#F5F5F5"
   },
 } as const;
 

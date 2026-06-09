@@ -12,10 +12,13 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
  * Additional full-screen routes (details, modals, etc.) can be added here.
  */
 import CameraScreen from '../screens/CameraScreen';
-import Click2ConnectScreen from '../screens/Click2ConnectScreen';
-
 import PreviewExtractedScreen from '../screens/PreviewExtractedScreen';
 import PreviewSendScreen from '../screens/PreviewSendScreen';
+import AddContactGroupScreen from '../screens/AddContactGroupScreen';
+import EditContactGroupScreen from '../screens/EditContactGroupScreen';
+import ContactListScreen from '../screens/ContactListScreen';
+import AddMailTemplateScreen from '../screens/AddMailTemplateScreen';
+import EditMailTemplateScreen from '../screens/EditMailTemplateScreen';
 
 export const AppNavigator = () => {
   return (
@@ -27,9 +30,13 @@ export const AppNavigator = () => {
     >
       <Stack.Screen name="Home" component={BottomTabNavigator} />
       <Stack.Screen name="Camera" component={CameraScreen} />
-      <Stack.Screen name="Click2Connect" component={Click2ConnectScreen} />
       <Stack.Screen name="PreviewExtracted" component={PreviewExtractedScreen} />
       <Stack.Screen name="PreviewSend" component={PreviewSendScreen} />
+      <Stack.Screen name="AddContactGroup" component={AddContactGroupScreen} />
+      <Stack.Screen name="EditContactGroup" component={EditContactGroupScreen} />
+      <Stack.Screen name="ContactList" component={ContactListScreen} />
+      <Stack.Screen name="AddMailTemplate" component={AddMailTemplateScreen} />
+      <Stack.Screen name="EditMailTemplate" component={EditMailTemplateScreen} />
     </Stack.Navigator>
   );
 };

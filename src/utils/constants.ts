@@ -6,8 +6,9 @@
 export const CONSTANTS = {
   // API Configurations
   API: {
-    BASE_URL: 'https://spidercrm.in/staging4/api/emailcampaign/app',
-    TIMEOUT: 15000, // 15 seconds
+    BASE_URL: 'https://spidercrm.biz/api/emailcampaign/app',
+    // BASE_URL: 'https://spidercrm.in/staging4/api/emailcampaign/app',
+    TIMEOUT: 50000, // 15 seconds
     HEADERS: {
       JSON: 'application/json',
       MULTIPART: 'multipart/form-data',
@@ -19,6 +20,10 @@ export const CONSTANTS = {
     },
   },
 
+  IMAGE_URL:{
+GROUP_LOGO:'https://spidercrm.biz/public/'
+// GROUP_LOGO:'https://spidercrm.in/staging4/public/'
+  },
   // AsyncStorage Keys (or SecureStore Keys)
   STORAGE_KEYS: {
     AUTH_TOKEN: '@spidersend_user_token',

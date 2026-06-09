@@ -16,21 +16,28 @@ import { AppToolbar, CustomText, CustomButton, CustomInput } from '../components
 import { colors, fonts } from '../theme';
 import { AppStackParamList, AppNavigationProp } from '../navigation/types';
 import { useAuth } from '../hooks';
+import { useStatusModal } from '../contexts/StatusModalContext';
+import { Dropdown } from 'react-native-element-dropdown';
 import {
   reScanBusinessCard,
   getMailTemplates,
   generateMailTemplate,
   storeScanData,
+  storeMailTemplate,
   MailTemplate,
   ContactData
 } from '../services/click2ConnectService';
+import { actions, RichEditor, RichToolbar } from 'react-native-pell-rich-editor';
 
 import AiIcon from '../assets/icons/thundericon.svg';
 import ScanningIcon from '../assets/icons/scanningIcon.svg';
 import DownArrowIcon from '../assets/icons/downarrow.svg';
+import DeleteIcon from '../assets/icons/delete.svg';
+import CloseIcon from '../assets/icons/cancelicon.svg';
 
 const PreviewExtractedScreen = () => {
   const { user } = useAuth();
+  const { showError, showSuccess } = useStatusModal();
   const navigation = useNavigation<AppNavigationProp>();
   const route = useRoute<RouteProp<AppStackParamList, 'PreviewExtracted'>>();
   const insets = useSafeAreaInsets();
@@ -66,6 +73,55 @@ const PreviewExtractedScreen = () => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
 
+  const [showGeneratedModal, setShowGeneratedModal] = useState(false);
+  const [generatedTemplate, setGeneratedTemplate] = useState({
+    template_name: '',
+    subject: '',
+    content: '',
+  });
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  const aiPromptRef = useRef('');
+  const generatedRichTextRef = useRef<RichEditor>(null);
+
+  // Animations
+  const spinAnim1 = useRef(new Animated.Value(0)).current;
+  const spinAnim2 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (generating) {
+      Animated.loop(
+        Animated.timing(spinAnim1, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        })
+      ).start();
+      Animated.loop(
+        Animated.timing(spinAnim2, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinAnim1.stopAnimation();
+      spinAnim2.stopAnimation();
+      spinAnim1.setValue(0);
+      spinAnim2.setValue(0);
+    }
+  }, [generating]);
+
+  const spin1 = spinAnim1.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const spin2 = spinAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['360deg', '0deg'],
+  });
+
   // Fetch mail templates on mount
   const loadTemplates = async () => {
     if (!user?.id) return;
@@ -74,8 +130,10 @@ const PreviewExtractedScreen = () => {
       if (response.status && response.data?.templates) {
         setTemplates(response.data.templates);
       }
-    } catch (e) {
-      console.error('Failed to load templates', e);
+    } catch (e: any) {
+      if (e?.response?.status !== 401) {
+        console.error('Failed to load templates', e);
+      }
     }
   };
 
@@ -111,7 +169,7 @@ const PreviewExtractedScreen = () => {
   // Handle re-scan action
   const handleReScan = async () => {
     if (!user?.id || !scanData?.image) {
-      Alert.alert('Error', 'Missing user or image data for re-scan.');
+      showError('Missing user or image data for re-scan.');
       return;
     }
     setRescanning(true);
@@ -129,10 +187,10 @@ const PreviewExtractedScreen = () => {
         }));
         setContacts(newContacts);
       } else {
-        Alert.alert('Failed', response.message || 'Rescan failed');
+        showError(response.message || 'Rescan failed');
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to rescan');
+      showError(e?.message || 'Failed to rescan');
     } finally {
       setRescanning(false);
     }
@@ -141,20 +199,83 @@ const PreviewExtractedScreen = () => {
   // Handle generating template with AI
   const handleGenerate = async () => {
     if (!user?.id || !aiPrompt.trim()) return;
+
+    setShowAiModal(false);
+    setShowGeneratedModal(false);
+
     setGenerating(true);
     try {
       const response = await generateMailTemplate(user.id, aiPrompt);
       if (response.status) {
-        setShowAiModal(false);
-        setAiPrompt('');
-        loadTemplates(); // Refresh template list
+        setGeneratedTemplate({
+          template_name: response.data.template_name || '',
+          subject: response.data.subject || '',
+          content: response.data.content || '',
+        });
+        setTimeout(() => {
+          generatedRichTextRef.current?.setContentHTML(response.data.content || '');
+        }, 100);
+        setShowGeneratedModal(true);
       } else {
-        Alert.alert('Failed', response.message || 'Generation failed');
+        showError(response.message || 'Generation failed');
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to generate template');
+      showError(e?.message || 'Failed to generate template');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleReGenerate = async () => {
+    const currentPrompt = aiPromptRef.current;
+    if (!user?.id || !currentPrompt.trim()) return;
+
+    setTimeout(async () => {
+      setGenerating(true);
+      try {
+        const response = await generateMailTemplate(user.id, currentPrompt);
+        if (response.status) {
+          setGeneratedTemplate({
+            template_name: response.data.template_name || '',
+            subject: response.data.subject || '',
+            content: response.data.content || '',
+          });
+          setTimeout(() => {
+            generatedRichTextRef.current?.setContentHTML(response.data.content || '');
+          }, 100);
+          setShowGeneratedModal(true);
+        } else {
+          showError(response.message || 'Generation failed');
+        }
+      } catch (e: any) {
+        showError(e?.message || 'Failed to generate template');
+      } finally {
+        setGenerating(false);
+      }
+    }, 300);
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!user?.id) return;
+    setSavingTemplate(true);
+    try {
+      const response = await storeMailTemplate(
+        user.id,
+        generatedTemplate.template_name,
+        generatedTemplate.subject,
+        generatedTemplate.content
+      );
+      if (response.status) {
+        showSuccess('Template saved successfully!');
+        setShowGeneratedModal(false);
+        loadTemplates(); // Refresh template list
+      } else {
+        showError(response.message || 'Failed to save template');
+      }
+    } catch (e: any) {
+      showError(e?.message || 'Failed to save template');
+    } finally {
+      setSavingTemplate(false);
     }
   };
 
@@ -184,14 +305,14 @@ const PreviewExtractedScreen = () => {
   const handlePreviewAndSend = async () => {
     if (!user?.id) return;
     if (!selectedTemplate) {
-      Alert.alert('Validation Error', 'Please select a mail template from the dropdown.');
+      showError('Please select a mail template from the dropdown.');
       return;
     }
 
     // Validate contacts
     const invalidIndex = contacts.findIndex(c => !c.name.trim() || !c.email.trim());
     if (invalidIndex !== -1) {
-      Alert.alert('Validation Error', `Name and Email are mandatory for Scan Data #${invalidIndex + 1}.`);
+      showError(`Name and Email are mandatory for Scan Data #${invalidIndex + 1}.`);
       return;
     }
 
@@ -206,7 +327,7 @@ const PreviewExtractedScreen = () => {
           clickToConnectId,
         });
       } else {
-        Alert.alert('Error', res.message || 'Failed to save scan data.');
+        showError(res.message || 'Failed to save scan data.');
       }
     } catch (e: any) {
       console.log('API Error:', e?.response?.data);
@@ -217,10 +338,9 @@ const PreviewExtractedScreen = () => {
         const firstErrorKey = Object.keys(apiError.errors)[0];
         const firstErrorMessage = apiError.errors[firstErrorKey][0];
 
-        Alert.alert('Validation Error', firstErrorMessage);
+        showError(firstErrorMessage);
       } else {
-        Alert.alert(
-          'Error',
+        showError(
           apiError?.message || 'Failed to store scan data'
         );
       }
@@ -241,55 +361,38 @@ const PreviewExtractedScreen = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
 
-          {/* Mail Template Section */}
-          <View style={styles.headerRow}>
-            <CustomText style={styles.headerLabel}>Select Mail Template</CustomText>
-            <TouchableOpacity
-              style={styles.aiButton}
-              activeOpacity={0.8}
-              onPress={() => setShowAiModal(true)}
-            >
-              <AiIcon width={16} height={16} color="#fff" />
-              <CustomText style={styles.aiButtonText}>Generate with AI</CustomText>
-            </TouchableOpacity>
-          </View>
+       {/* Mail Template Section */}
+<View style={styles.headerRow}>
+  <CustomText style={styles.headerLabel}>Select Mail Template</CustomText>
+  <TouchableOpacity
+    style={styles.aiButton}
+    activeOpacity={0.8}
+    onPress={() => {
+      setAiPrompt('');
+      aiPromptRef.current = '';
+      setShowAiModal(true);
+    }}
+  >
+    <AiIcon width={16} height={16} color="#fff" />
+    <CustomText style={styles.aiButtonText}>Generate with AI</CustomText>
+  </TouchableOpacity>
+</View>
 
-          <View style={{ marginBottom: 24 }}>
-            <TouchableOpacity
-              style={styles.dropdownContainer}
-              activeOpacity={0.8}
-              onPress={() => setShowTemplateModal(!showTemplateModal)}
-            >
-              <CustomText style={selectedTemplate ? styles.dropdownSelected : styles.dropdownPlaceholder}>
-                {selectedTemplate ? selectedTemplate.name : 'Choose from below'}
-              </CustomText>
-              <View style={{ transform: [{ rotate: showTemplateModal ? '180deg' : '0deg' }] }}>
-                <DownArrowIcon width={14} height={14} />
-              </View>
-            </TouchableOpacity>
-
-            {showTemplateModal && (
-              <View style={styles.dropdownList}>
-                <ScrollView nestedScrollEnabled style={{ maxHeight: 200 }}>
-                  {templates.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setSelectedTemplate(item);
-                        setShowTemplateModal(false);
-                      }}
-                    >
-                      <CustomText style={styles.dropdownItemText}>{item.name}</CustomText>
-                    </TouchableOpacity>
-                  ))}
-                  {templates.length === 0 && (
-                    <CustomText style={styles.emptyText}>No templates found.</CustomText>
-                  )}
-                </ScrollView>
-              </View>
-            )}
-          </View>
+<Dropdown
+  style={styles.dropdown}
+  containerStyle={styles.dropdownContainer}
+  placeholderStyle={styles.dropdownPlaceholder}
+  selectedTextStyle={styles.dropdownSelected}
+  itemTextStyle={styles.dropdownItemText}
+  activeColor="#F3F4F6"
+  data={templates.map(t => ({ label: t.name, value: t.id, raw: t }))}
+  labelField="label"
+  valueField="value"
+  placeholder="Choose from below"
+  value={selectedTemplate?.id ?? null}
+  onChange={item => setSelectedTemplate(item.raw)}
+  maxHeight={220}
+/>
 
           {/* Dynamic Form Fields Mapping */}
           {contacts.map((contact, index) => {
@@ -300,7 +403,7 @@ const PreviewExtractedScreen = () => {
                   <View style={styles.contactCardHeader}>
                     <CustomText style={styles.contactCardTitle}>Scan Data #{index + 1}</CustomText>
                     <TouchableOpacity style={styles.trashBtn} onPress={() => handleDeleteRow(contact.id)}>
-                      <CustomText style={styles.trashIconText}>🗑</CustomText>
+                      <DeleteIcon width={20} height={20}/>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -308,7 +411,7 @@ const PreviewExtractedScreen = () => {
                   <View style={[styles.contactCardHeader, { marginBottom: 12 }]}>
                     <CustomText style={styles.contactCardTitle}>Scan Data #1</CustomText>
                     <TouchableOpacity style={styles.trashBtn} onPress={() => handleDeleteRow(contact.id)}>
-                      <CustomText style={styles.trashIconText}>🗑</CustomText>
+                      <DeleteIcon width={20} height={20}/>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -405,19 +508,22 @@ const PreviewExtractedScreen = () => {
         />
       </View>
 
-      {/* AI Generate Modal */}
       <Modal visible={showAiModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.aiModalCard}>
             <View style={styles.aiModalHeader}>
-              <CustomText style={styles.aiModalTitle}>generate template with AI</CustomText>
-              <TouchableOpacity onPress={() => setShowAiModal(false)} style={styles.aiCloseIconBtn}>
-                <CustomText style={styles.aiCloseIconText}>✕</CustomText>
+              <CustomText style={styles.aiModalTitle}>Generate template with AI</CustomText>
+              <TouchableOpacity onPress={() => setShowAiModal(false)}>
+                <CloseIcon width={34} height={34} />
               </TouchableOpacity>
             </View>
+            <View style={styles.modalDivider} />
             <CustomInput
               value={aiPrompt}
-              onChangeText={setAiPrompt}
+              onChangeText={(val) => {
+                setAiPrompt(val);
+                aiPromptRef.current = val;
+              }}
               placeholder="Write a few lines - we'll turn it into a perfect email"
               multiline
               inputRowStyle={styles.aiInputRow}
@@ -444,6 +550,141 @@ const PreviewExtractedScreen = () => {
         </View>
       </Modal>
 
+      {/* Generated Modal */}
+      <Modal visible={showGeneratedModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.aiModalCard, { maxHeight: '90%', flexShrink: 1 }]}>
+            <View style={styles.aiModalHeader}>
+              <CustomText style={styles.aiModalTitle}>Generated Template</CustomText>
+              <TouchableOpacity onPress={() => setShowGeneratedModal(false)}>
+                <CloseIcon width={34} height={34} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalDivider} />
+
+            <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+              <CustomText style={styles.fieldLabel}>Template Name</CustomText>
+              <CustomInput
+                value={generatedTemplate.template_name}
+                onChangeText={(val) => setGeneratedTemplate({ ...generatedTemplate, template_name: val })}
+                inputRowStyle={styles.customInputRow}
+                inputStyle={styles.customInputText}
+                containerStyle={styles.inputContainer}
+              />
+
+              <CustomText style={styles.fieldLabel}>Subject</CustomText>
+              <CustomInput
+                value={generatedTemplate.subject}
+                onChangeText={(val) => setGeneratedTemplate({ ...generatedTemplate, subject: val })}
+                inputRowStyle={styles.customInputRow}
+                inputStyle={styles.customInputText}
+                containerStyle={styles.inputContainer}
+              />
+
+              <View style={styles.messageCard}>
+                <View style={{ marginBottom: 8 }}>
+                  <CustomText style={styles.fieldLabel}>Message</CustomText>
+                </View>
+
+                <View style={styles.richTextContainer}>
+                  <RichToolbar
+                    editor={generatedRichTextRef}
+                    actions={[
+                      actions.setBold,
+                      actions.setItalic,
+                      actions.setUnderline,
+                      actions.heading1,
+                      actions.insertBulletsList,
+                      actions.insertOrderedList,
+                      actions.undo,
+                      actions.redo,
+                    ]}
+                    iconTint="#6B7280"
+                    selectedIconTint={colors.primary.main}
+                    style={styles.richToolbar}
+                  />
+                  <ScrollView scrollEnabled={false} style={styles.richEditorWrapper}>
+                    <RichEditor
+                      ref={generatedRichTextRef}
+                      initialContentHTML={generatedTemplate.content || '<p></p>'}
+                      onChange={(val) => setGeneratedTemplate({ ...generatedTemplate, content: val })}
+                      placeholder="AI generated content..."
+                      initialHeight={200}
+                      useContainer={true}
+                      editorStyle={{
+                        backgroundColor: '#F3F4F6',
+                        color: '#111827',
+                      }}
+                    />
+                  </ScrollView>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={[styles.aiModalFooter, { paddingTop: 10 }]}>
+              <CustomButton
+                title="Re-Generate"
+                variant="outline"
+                onPress={handleReGenerate}
+                disabled={generating}
+                style={styles.aiCloseBtn}
+                textStyle={styles.aiCloseBtnText}
+              />
+              <CustomButton
+                title={savingTemplate ? 'Saving...' : 'Save Template'}
+                onPress={handleSaveTemplate}
+                disabled={savingTemplate}
+                style={styles.aiGenerateBtn}
+                textStyle={styles.aiGenerateBtnText}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Generating Loader */}
+      <Modal visible={generating} transparent animationType="fade">
+        <View style={styles.modalOverlay1}>
+          <View style={[styles.scanningModalCard, { paddingVertical: 40 }]}>
+            <View style={styles.scanningContent}>
+              <View style={{ width: 60, height: 60, justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+                <Animated.View
+                  style={{
+                    position: 'absolute',
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    borderWidth: 6,
+                    borderColor: 'transparent',
+                    borderTopColor: '#171829',
+                    borderRightColor: '#171829',
+                    transform: [{ rotate: spin1 }],
+                  }}
+                />
+                <Animated.View
+                  style={{
+                    position: 'absolute',
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    borderWidth: 6,
+                    borderColor: 'transparent',
+                    borderBottomColor: '#2BA6B5',
+                    borderLeftColor: '#2BA6B5',
+                    transform: [{ rotate: spin2 }],
+                  }}
+                />
+              </View>
+              <CustomText style={styles.scanningTitle}>Generating...!</CustomText>
+              <CustomText style={styles.scanningSubTitle}>
+                Please wait while AI generate the{'\n'}template
+              </CustomText>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Rescanning Loader */}
       <Modal visible={rescanning} transparent animationType="fade">
         <View style={styles.modalOverlay1}>
           <View style={styles.scanningModalCard}>
@@ -523,47 +764,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.families.bold,
   },
-  dropdownContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  dropdownPlaceholder: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    fontFamily: fonts.families.medium,
-  },
-  dropdownSelected: {
-    color: '#111827',
-    fontSize: 14,
-    fontFamily: fonts.families.semibold,
-  },
-  dropdownIcon: {
-    color: '#9CA3AF',
-    fontSize: 14,
-  },
-  dropdownList: {
-    backgroundColor: '#F3F4F6',
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    marginTop: 2,
-    overflow: 'hidden',
-  },
-  dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    color: '#374151',
-    fontFamily: fonts.families.medium,
-  },
+ dropdown: {
+  backgroundColor: '#F3F4F6',
+  borderRadius: 12,
+  paddingHorizontal: 16,
+  height: 48,
+  marginBottom: 24,
+},
+dropdownContainer: {
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+  overflow: 'hidden',
+  elevation: 4,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 6,
+},
+dropdownPlaceholder: {
+  fontSize: 12,
+  fontFamily: fonts.families.medium,
+  color: '#9CA3AF',
+},
+dropdownSelected: {
+  fontSize: 14,
+  fontFamily: fonts.families.bold,
+  color: '#111827',
+},
+dropdownItemText: {
+  fontSize: 14,
+  fontFamily: fonts.families.medium,
+  color: '#111827',
+},
   contactCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -822,5 +1055,33 @@ const styles = StyleSheet.create({
   extractingText: {
     fontSize: 14,
     color: colors.text.secondary,
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  messageCard: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    marginTop: 4,
+  },
+  richTextContainer: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F3F4F6',
+    overflow: 'hidden',
+  },
+  richToolbar: {
+    backgroundColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#D1D5DB',
+  },
+  richEditorWrapper: {
+    minHeight: 200,
   },
 });

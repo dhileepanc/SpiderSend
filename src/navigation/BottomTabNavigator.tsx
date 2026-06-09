@@ -1,8 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks';
+import { useStatusModal } from '../contexts/StatusModalContext';
 import { getClickToVerify } from '../services/click2ConnectService';
 import { CustomTabBar } from './CustomTabBar';
 import HomeScreen from '../screens/HomeScreen';
@@ -28,6 +28,7 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
  */
 export const BottomTabNavigator = () => {
   const { user } = useAuth();
+  const { showError } = useStatusModal();
   const navigation = useNavigation<any>();
 
   const handleVerifyClick2Connect = async (e: any) => {
@@ -36,12 +37,13 @@ export const BottomTabNavigator = () => {
     try {
       const verifyResponse = await getClickToVerify(user.id);
       if (verifyResponse.status) {
-        navigation.navigate('Click2Connect', { client_id: user.id });
+        // Navigate directly to Camera so it opens immediately on tab press
+        navigation.navigate('Camera');
       } else {
-        Alert.alert('Alert', verifyResponse.message || 'Verification failed');
+        showError(verifyResponse.message || 'Verification failed. You cannot scan right now.');
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to verify');
+      showError(err?.message || 'Failed to verify');
     }
   };
 

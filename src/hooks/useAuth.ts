@@ -13,6 +13,7 @@ import {
   User,
 } from '../redux/slices/authSlice';
 import { requestLoginOtp, verifyLoginOtp } from '../services/authService';
+import { setSessionTokenReference } from '../services/axiosInstance';
 import { parseError } from '../utils/helpers';
 
 /** AsyncStorage key for persisting the logged-in user */
@@ -99,6 +100,7 @@ export const useAuth = () => {
             trial_access_active: client.trial_access_active,
             service_timezone: client.service_timezone,
             notes: client.notes,
+            session_token: client.send_session_token,
           };
 
           // Persist user to AsyncStorage so login survives app restarts
@@ -106,6 +108,7 @@ export const useAuth = () => {
 
           // Store in Redux — this flips isLoggedIn = true and triggers navigation
           dispatch(setCredentials({ user: userData }));
+          setSessionTokenReference(userData.session_token);
         } else {
           // Server responded 2xx but status is false — treat as failure
           dispatch(setError(response.message ?? 'Verification failed. Please try again.'));
@@ -130,6 +133,7 @@ export const useAuth = () => {
   const logout = useCallback(async () => {
     await AsyncStorage.removeItem(USER_STORAGE_KEY);
     dispatch(clearCredentials());
+    setSessionTokenReference(null);
   }, [dispatch]);
 
   /**

@@ -15,10 +15,12 @@ export type AppStackParamList = {
   Home: undefined;
   Details: { itemId: string; title: string } | undefined;
   Camera: undefined;
-  Click2Connect: {
-    photoUri?: string;
-    client_id?: number;
-  } | undefined;
+  AddContactGroup: undefined;
+  EditContactGroup: { id: number | string };
+  ContactList: { id: number | string };
+  AddMailTemplate: undefined;
+  EditMailTemplate: { id: number | string };
+
   PreviewExtracted: {
     data: {
       fields: Array<{

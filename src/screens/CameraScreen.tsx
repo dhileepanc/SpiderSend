@@ -18,7 +18,9 @@ const CameraScreen = () => {
     const result = await launchCamera({
       mediaType: 'photo',
       cameraType: 'back',
-      quality: 0.8,
+      quality: 0.4,
+      maxWidth: 1024,
+      maxHeight: 1024,
       saveToPhotos: false,
     });
 
@@ -30,8 +32,11 @@ const CameraScreen = () => {
     if (result.assets?.length) {
       const photoUri = result.assets[0].uri;
 
-      navigation.navigate('Click2Connect', {
-        photoUri,
+      // Navigate to the Click2Connect tab. 
+      // This will pop CameraScreen and switch to the Click2Connect tab.
+      (navigation as any).navigate('Home', {
+        screen: 'Click2Connect',
+        params: { photoUri },
       });
     } else {
       navigation.goBack();

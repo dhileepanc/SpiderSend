@@ -16,6 +16,7 @@ export interface User {
   trial_access_active: boolean;
   service_timezone: string;
   notes: string | null;
+  session_token: string | null;
 }
 
 /**

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BootSplash from 'react-native-bootsplash';
@@ -8,6 +9,8 @@ import { useAuth } from '../hooks';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 import { USER_STORAGE_KEY } from '../hooks/useAuth';
+import { setSessionTokenReference } from '../services/axiosInstance';
+import { useStatusModal } from '../contexts/StatusModalContext';
 
 /**
  * RootNavigator
@@ -19,8 +22,9 @@ import { USER_STORAGE_KEY } from '../hooks/useAuth';
  */
 export const RootNavigator = () => {
   const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const [isReady, setIsReady] = useState(false);
+  const { showError } = useStatusModal();
 
   useEffect(() => {
     const rehydrate = async () => {
@@ -29,6 +33,9 @@ export const RootNavigator = () => {
         if (raw) {
           const user: User = JSON.parse(raw);
           dispatch(rehydrateAuth({ user }));
+          if (user.session_token) {
+            setSessionTokenReference(user.session_token);
+          }
         } else {
           dispatch(rehydrateAuth(null));
         }
@@ -42,6 +49,24 @@ export const RootNavigator = () => {
 
     rehydrate();
   }, [dispatch]);
+
+  useEffect(() => {
+    const sessionExpiredListener = DeviceEventEmitter.addListener('SESSION_EXPIRED', () => {
+      showError(
+        'Someone else logged into your account, please login again to continue.',
+        'Session Expired',
+        async () => {
+          await AsyncStorage.clear();
+          logout();
+        },
+        'danger'
+      );
+    });
+
+    return () => {
+      sessionExpiredListener.remove();
+    };
+  }, [showError, logout]);
 
   // Keep splash visible until AsyncStorage check is complete
   if (!isReady) {

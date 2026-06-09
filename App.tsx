@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import { store } from './src/redux';
 import RootNavigator from './src/navigation/RootNavigator';
+import { StatusModalProvider } from './src/contexts/StatusModalContext';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -17,12 +18,14 @@ function App(): React.JSX.Element {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          backgroundColor="transparent"
-          translucent
-        />
-        <RootNavigator />
+        <StatusModalProvider>
+          <StatusBar
+            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+            backgroundColor="transparent"
+            translucent
+          />
+          <RootNavigator />
+        </StatusModalProvider>
       </SafeAreaProvider>
     </Provider>
   );

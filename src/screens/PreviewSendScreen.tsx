@@ -19,6 +19,7 @@ import { AppToolbar, CustomText, CustomButton, CustomInput } from '../components
 import { colors, fonts } from '../theme';
 import { AppStackParamList, AppNavigationProp } from '../navigation/types';
 import { useAuth } from '../hooks';
+import { useStatusModal } from '../contexts/StatusModalContext';
 import { sendMailCampaign, getClickToConnectPreview } from '../services/click2ConnectService';
 
 import { actions, RichEditor, RichToolbar } from 'react-native-pell-rich-editor';
@@ -44,6 +45,7 @@ const cleanHtml = (html: any): string => {
 
 const PreviewSendScreen = () => {
   const { user } = useAuth();
+  const { showError } = useStatusModal();
   const navigation = useNavigation<AppNavigationProp>();
   const route = useRoute<RouteProp<AppStackParamList, 'PreviewSend'>>();
   const insets = useSafeAreaInsets();
@@ -157,7 +159,7 @@ const PreviewSendScreen = () => {
   // ── Send Now (NO schedule params) ──────────────────────────────────────────
   const handleSendNow = async () => {
     if (!user?.id || !clickToConnectId) {
-      Alert.alert('Error', 'Missing required data to send.');
+      showError('Missing required data to send.');
       return;
     }
     setSending(true);
@@ -177,10 +179,10 @@ const PreviewSendScreen = () => {
           navigation.navigate('Home');
         }, 4000);
       } else {
-        Alert.alert('Error', res.message || 'Failed to send mail.');
+        showError(res.message || 'Failed to send mail.');
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to send mail');
+      showError(e?.message || 'Failed to send mail');
     } finally {
       setSending(false);
     }
@@ -196,11 +198,11 @@ const PreviewSendScreen = () => {
   // ── Schedule Action ────────────────────────────────────────────────────────
   const handleScheduleAction = async () => {
     if (!displayDate) {
-      Alert.alert('Validation', 'Please select a date and time.');
+      showError('Please select a date and time.', 'Validation');
       return;
     }
     if (!user?.id || !clickToConnectId) {
-      Alert.alert('Error', 'Missing required data to schedule.');
+      showError('Missing required data to schedule.');
       return;
     }
 
@@ -234,10 +236,10 @@ const PreviewSendScreen = () => {
           navigation.navigate('Home');
         }, 4000);
       } else {
-        Alert.alert('Error', res.message || 'Failed to schedule mail.');
+        showError(res.message || 'Failed to schedule mail.');
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to schedule mail');
+      showError(e?.message || 'Failed to schedule mail');
     } finally {
       setScheduling(false);
     }

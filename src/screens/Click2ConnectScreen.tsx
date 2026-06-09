@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,30 +9,59 @@ import {
   Modal,
   Animated,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppToolbar, CustomText, CustomButton } from '../components/common';
 import { colors, fonts } from '../theme';
 import { globalStyles } from '../styles/globalStyles';
 import { scanBusinessCard } from '../services';
+import { getClickToVerify } from '../services/click2ConnectService';
 import { useAuth } from '../hooks';
+import { useStatusModal } from '../contexts/StatusModalContext';
 import { BottomTabParamList } from '../navigation/BottomTabNavigator';
 import { AppNavigationProp } from '../navigation/types';
 
-import UploadIcon from '../assets/icons/uploadicon.svg';  
+import UploadIcon from '../assets/icons/uploadicon.svg';
 import ScanningIcon from '../assets/icons/scanningIcon.svg';
 
 const Click2ConnectScreen = () => {
   const { user } = useAuth();
+  const { showError } = useStatusModal();
   const navigation = useNavigation<AppNavigationProp>();
   const route = useRoute<RouteProp<BottomTabParamList, 'Click2Connect'>>();
   const insets = useSafeAreaInsets();
-  
+
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
 
   // Animated value for line loader
   const lineAnim = useRef(new Animated.Value(0)).current;
+
+  // ── Verify Access on Focus ───────────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      const verifyAccess = async () => {
+        if (!user?.id) return;
+        try {
+          const verifyResponse = await getClickToVerify(user.id);
+          if (!verifyResponse.status) {
+            showError(verifyResponse.message || 'Verification failed. You cannot scan right now.');
+            navigation.navigate('Home');
+          }
+        } catch (err: any) {
+          showError(err?.message || 'Failed to verify');
+          navigation.navigate('Home');
+        }
+      };
+
+      verifyAccess();
+
+      // Clear the photo only when leaving the screen
+      return () => {
+        setPhotoUri(null);
+      };
+    }, [user?.id, navigation])
+  );
 
   // ── Listen for photo captured from CameraScreen ───────────────────────────
   useEffect(() => {
@@ -89,18 +118,18 @@ const Click2ConnectScreen = () => {
       );
 
       if (result.status) {
-        console.log("scanBusinessCard",result);
-        
+        console.log("scanBusinessCard", result);
+
         // Alert.alert('Success', result.message || 'Business card scanned successfully!');
         setPhotoUri(null);
         navigation.navigate('PreviewExtracted', {
           data: result.data
         });
       } else {
-        Alert.alert('Failed', result.message || 'Scan failed. Please try again.');
+        showError(result.message || 'Scan failed. Please try again.');
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
+      showError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setScanning(false);
     }
@@ -155,7 +184,7 @@ const Click2ConnectScreen = () => {
 
             <Image
               source={{ uri: photoUri }}
-              style={styles.previewImage} 
+              style={styles.previewImage}
               resizeMode="cover"
             />
           </View>
@@ -179,32 +208,32 @@ const Click2ConnectScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.scanningModalCard}>
             <View style={styles.scanningContent}>
-       <View style={styles.scannerIconWrapper}>
-  <ScanningIcon
-    width={100}
-    height={100}
-  />
-</View>
+              <View style={styles.scannerIconWrapper}>
+                <ScanningIcon
+                  width={100}
+                  height={100}
+                />
+              </View>
               <CustomText style={styles.scanningTitle}>Scanning Your Card</CustomText>
               <CustomText style={styles.scanningSubTitle}>
                 Please wait while we extract the information from{'\n'}your business card
               </CustomText>
-              
+
               {/* Line Loader above extracting text */}
               <View style={styles.lineLoaderContainer}>
-                <Animated.View 
+                <Animated.View
                   style={[
-                    styles.lineLoaderBar, 
+                    styles.lineLoaderBar,
                     {
                       left: lineAnim.interpolate({
                         inputRange: [0, 1],
                         outputRange: ['0%', '70%'],
                       }),
                     }
-                  ]} 
+                  ]}
                 />
               </View>
-              
+
               <CustomText style={styles.extractingText}>Extracting Card Details....</CustomText>
             </View>
           </View>
@@ -495,7 +524,7 @@ const styles = StyleSheet.create({
   docLine2: { width: '60%', height: 3, backgroundColor: '#CBD5E1', marginBottom: 12, borderRadius: 2 },
   docLine3: { width: '90%', height: 3, backgroundColor: '#CBD5E1', marginBottom: 6, borderRadius: 2 },
   docLine4: { width: '70%', height: 3, backgroundColor: '#CBD5E1', borderRadius: 2 },
-  
+
   scanningTitle: {
     fontSize: 16,
     fontFamily: fonts.families.bold,
@@ -531,7 +560,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   scannerImage: {
-  width: 60,
-  height: 60,
-},
+    width: 60,
+    height: 60,
+  },
 });

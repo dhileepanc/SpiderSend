@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { DeviceEventEmitter } from 'react-native';
 import { CONSTANTS } from '../utils/constants';
 
 
@@ -87,9 +88,14 @@ const axiosInstance: AxiosInstance = axios.create({
  * In a real application, retrieve these from Redux, Context, or AsyncStorage.
  */
 let authToken: string | null = null;
+let sessionToken: string | null = null;
 
 export const setAuthTokenReference = (token: string | null) => {
   authToken = token;
+};
+
+export const setSessionTokenReference = (token: string | null) => {
+  sessionToken = token;
 };
 
 /**
@@ -111,6 +117,10 @@ axiosInstance.interceptors.request.use(
       // In production: Read asynchronously from SecureStore/AsyncStorage if not loaded in memory
       // const token = await AsyncStorage.getItem(CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
       // if (token) { config.headers.Authorization = `Bearer ${token}`; }
+    }
+
+    if (sessionToken) {
+      config.headers['X-Session-Token'] = sessionToken;
     }
 
     logRequest(config);
@@ -135,9 +145,17 @@ axiosInstance.interceptors.response.use(
     logError(error);
     const originalRequest = error.config;
 
+    const is401 = error.response && error.response.status === 401;
+    const isInvalidToken =
+      error.response &&
+      error.response.data &&
+      typeof error.response.data.message === 'string' &&
+      error.response.data.message.toLowerCase() === 'invalid token.';
+
     // Handle 401 Unauthorized (Expired Tokens)
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    if ((is401 || isInvalidToken) && !originalRequest._retry) {
       originalRequest._retry = true;
+      DeviceEventEmitter.emit('SESSION_EXPIRED');
 
       try {
         // Placeholder refresh token logic:

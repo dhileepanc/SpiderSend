@@ -46,6 +46,7 @@ const [otp,setOtp]=useState(["","","","","",""]);
     setEmailError('');
     const ok = await requestOtp(email);
     if (ok) {
+      
       setShowVerify(true);
     }
   };
@@ -213,7 +214,12 @@ const [otp,setOtp]=useState(["","","","","",""]);
   Didn't get it?{' '}
   <CustomText
     style={styles.resendText}
-    onPress={() => requestOtp(email)}>
+    onPress={async () => {
+  setOtp(['', '', '', '', '', '']);
+  clearAuthError();
+  await requestOtp(email);
+  setTimeout(() => inputRefs.current[0]?.focus(), 100);
+}}>
     Resend Code
   </CustomText>
 </CustomText>

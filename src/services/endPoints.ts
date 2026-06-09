@@ -43,9 +43,28 @@ export const ENDPOINTS = {
   CLICK2CONNECTVERIFY: {
     VERIFY: '/click-to-connect-verify',
   },
+  DIRECT_SEND: {
+    POST: '/direct-send-post',
+  },
   MAIL_TEMPLATE: {
     LIST: '/mail-template-list',
     GENERATE: '/mail-template-generate',
+    STORE: '/mail-template-store',
+    EDIT: '/mail-template-edit',
+    UPDATE: '/mail-template-update',
+    DELETE: '/mail-template-delete',
+  },
+  CONTACT_GROUP: {
+    LIST: '/contact-group-list',
+    STORE: '/contact-group-store',
+    EDIT: '/contact-group-edit',
+    UPDATE: '/contact-group-update',
+    CONTACTS: '/contact-list',
+    CONTACT_ADD_VIEW: '/contact-add-view',
+    CONTACT_STORE: '/contact-store',
+    CONTACT_EDIT: '/contact-edit',
+    CONTACT_UPDATE: '/contact-update',
+    CONTACT_DELETE: '/contact-delete',
   }
 } as const;
 

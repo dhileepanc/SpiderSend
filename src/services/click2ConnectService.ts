@@ -119,6 +119,94 @@ export const generateMailTemplate = async (
   return response.data;
 };
 
+export interface MailTemplateStoreResponse {
+  status: boolean;
+  message: string;
+  data?: any;
+}
+
+export const storeMailTemplate = async (
+  clientId: string | number,
+  name: string,
+  subject: string,
+  content: string
+): Promise<MailTemplateStoreResponse> => {
+  const formData = new FormData();
+  formData.append('client_id', String(clientId));
+  formData.append('name', name);
+  formData.append('subject', subject);
+  formData.append('content', content);
+
+  const response = await axiosInstance.post<MailTemplateStoreResponse>(
+    ENDPOINTS.MAIL_TEMPLATE.STORE,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }
+  );
+  return response.data;
+};
+
+export interface MailTemplateEditResponse {
+  status: boolean;
+  message: string;
+  data: {
+    template: MailTemplate;
+  };
+}
+
+export const getMailTemplateDetails = async (
+  clientId: string | number,
+  templateId: string | number
+): Promise<MailTemplateEditResponse> => {
+  const response = await axiosInstance.get<MailTemplateEditResponse>(ENDPOINTS.MAIL_TEMPLATE.EDIT, {
+    params: { client_id: clientId, id: templateId },
+  });
+  return response.data;
+};
+
+export const updateMailTemplate = async (
+  clientId: string | number,
+  templateId: string | number,
+  name: string,
+  subject: string,
+  content: string
+): Promise<MailTemplateStoreResponse> => {
+  const formData = new FormData();
+  formData.append('client_id', String(clientId));
+  formData.append('id', String(templateId));
+  formData.append('name', name);
+  formData.append('subject', subject);
+  formData.append('content', content);
+
+  const response = await axiosInstance.post<MailTemplateStoreResponse>(
+    ENDPOINTS.MAIL_TEMPLATE.UPDATE,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }
+  );
+  return response.data;
+};
+
+export interface MailTemplateDeleteResponse {
+  status: boolean;
+  message: string;
+}
+
+export const deleteMailTemplate = async (
+  clientId: string | number,
+  templateId: string | number
+): Promise<MailTemplateDeleteResponse> => {
+  const response = await axiosInstance.delete<MailTemplateDeleteResponse>(
+    ENDPOINTS.MAIL_TEMPLATE.DELETE,
+    {
+      params: { client_id: clientId, id: templateId }
+    }
+  );
+  return response.data;
+};
+
 export interface ContactData {
   id: string; // internal id for UI rendering
   name: string;

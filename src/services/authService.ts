@@ -41,6 +41,7 @@ export interface ClientData {
   country_name: string | null;
   trial_access_active: boolean;
   service_timezone: string;
+  send_session_token:string;
 }
 
 export interface OtpVerifyResponse {
